@@ -1,17 +1,24 @@
 import sys
 from pathlib import Path
 
-trainPath = Path('train/')
-trainPath_ALL0 = Path('train/fold_0/fold_0/all/')
-trainPath_ALL1 = Path('train/fold_1/fold_1/all/')
-trainPath_ALL2 = Path('train/fold_2/fold_2/all/')
-trainPath_HEM0 = Path('train/fold_0/fold_0/hem/')
-trainPath_HEM1 = Path('train/fold_1/fold_1/hem/')
-trainPath_HEM2 = Path('train/fold_2/fold_2/hem/')
+# ============= PARTE MODIFICADA (AJUSTES DE CAMINHOS) =============
+base_path = Path('/content/PKG - C-NMC 2019')  # <- Ajuste apenas aqui se necessário
+trainPath = base_path / 'C-NMC_training_data'
 
-print(trainPath_HEM2)
+# Busca robusta de imagens (suporta .bmp, .png, .jpg e variações de maiúsculas/minúsculas)
+allTrainImgs = []
+for ext in ['*.bmp', '*.BMP', '*.png', '*.PNG', '*.jpg', '*.JPG']:  # Tenta extensões alternativas
+    allTrainImgs.extend(list(trainPath.glob(f'**/{ext}')))
+    if allTrainImgs:  # Para na primeira extensão que encontrar arquivos
+        break
+
+# Verificação (opcional - pode remover)
+print(f"\n🔍 Total de imagens encontradas: {len(allTrainImgs)}")
+if allTrainImgs:
+    print(f"Exemplo: {allTrainImgs[0]}")
 
 
+# ============= Parte Não Modificada =============
 class Patient():
     def __init__(self, patientID):
         self.patientID = patientID
@@ -30,7 +37,6 @@ class Patient():
     def HEMCellsCount(self):
         return len(self.listOfHEMCells)
 
-
 def totalCells(cellType):
     global patients
     total = 0
@@ -41,7 +47,6 @@ def totalCells(cellType):
             total += patient.HEMCellsCount()
         else:
             raise Exception('Especify cell type HEM or ALL')
-
     return total
 
 def getCellsImgPath(cellType):
@@ -54,7 +59,6 @@ def getCellsImgPath(cellType):
             ret += patient.listOfHEMCells
         else:
             raise Exception('Especify cell type HEM or ALL')
-
     return ret
 
 def getPatientCellsPath(patientID):
@@ -91,9 +95,7 @@ def getIdsHEMPatients():
     return ret
 
 patients = {}
-allTrainImgs = trainPath.glob('*/*/*/*.bmp')# fold_[0,1,2]/[all,hem]/*bmp
-
-for imgPath in allTrainImgs:
+for imgPath in allTrainImgs:  # <- Aqui usamos a lista de imagens já ajustada
     patientID = imgPath.stem.split('_')[1]
     cellType = imgPath.stem.split('_')[-1]
     if patientID not in patients:
@@ -107,7 +109,7 @@ for imgPath in allTrainImgs:
 
 if __name__ == '__main__':
     for patientID, patient in patients.items():
-        print(f"ID:{patientID}; ALL count:{patient.ALLCellsCount()}; HEM count:{patient.HEMCellsCount()} ")
+        print(f"ID:{patientID}; ALL count:{patient.ALLCellsCount()}; HEM count:{patient.HEMCellsCount()}")
 
     print(f"Total HEM:{totalCells(cellType='HEM')}")
     print(f"Total ALL:{totalCells(cellType='ALL')}")

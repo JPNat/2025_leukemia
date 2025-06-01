@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import cv2
 import radiomics
-from radiomics import firstorder
+from radiomics import firstorder, glcm, gldm, glrlm, glszm, ngtdm #mudei aqui
 import SimpleITK as sitk
 from scipy.spatial import distance
 from scipy.signal import resample
@@ -580,70 +580,72 @@ def extractFeatureDict(targetImgPath):
 
 
 def createAugmPatLvDivDataframe():
-    TRAIN_IMGS = os.listdir(augm_patLvDiv_train)
-    VALID_IMGS = os.listdir(augm_patLvDiv_valid)
-    TEST_IMGS = os.listdir(patLvDiv_test)
-    #Create Train Dataframe
-    def createTrainDataframe():
-        train_df = pd.DataFrame()
-        np.random.shuffle(TRAIN_IMGS)
-        for n, imgFile in enumerate(TRAIN_IMGS):
-            featuresDict = {}
-            imgPath = augm_patLvDiv_train / imgFile
-            featuresDict = extractFeatureDict(imgPath)
-            train_df = train_df.append(featuresDict, ignore_index=True)
-            print(f'{n}-Train')
-        cols = train_df.columns.tolist()
-        cols.remove('cellType(ALL=1, HEM=-1)')
-        cols = ['cellType(ALL=1, HEM=-1)'] + cols
-        train_df = train_df[cols]
-        train_df.to_csv(f'feature-dataframes/AugmPatLvDiv_TRAIN-AllFeats_{train_df.shape[1]-1}-Features_{train_df.shape[0]}-images.csv')
+  TRAIN_IMGS = os.listdir(augm_patLvDiv_train)
+  VALID_IMGS = os.listdir(augm_patLvDiv_valid)
+  TEST_IMGS = os.listdir(patLvDiv_test)
 
-    #Process for Validation dataset
-    def createValidDataframe():
-        valid_df = pd.DataFrame()
-        np.random.shuffle(VALID_IMGS)
-        for n, imgFile in enumerate(VALID_IMGS):
-            featuresDict = {}
-            imgPath = augm_patLvDiv_valid / imgFile
-            featuresDict = extractFeatureDict(imgPath)
-            valid_df = valid_df.append(featuresDict, ignore_index=True)
-            print(f'{n}-Validation')
-        cols = valid_df.columns.tolist()
-        cols.remove('cellType(ALL=1, HEM=-1)')
-        cols = ['cellType(ALL=1, HEM=-1)'] + cols
-        valid_df = valid_df[cols]
-        valid_df.to_csv(f'feature-dataframes/AugmPatLvDiv_VALIDATION-AllFeats_{valid_df.shape[1]-1}-Features_{valid_df.shape[0]}-images.csv')
-
-    #Process for Test dataset
-    def createTestDataframe():
-        test_df = pd.DataFrame()
-        np.random.shuffle(TEST_IMGS)
-        for n, imgFile in enumerate(TEST_IMGS):
-            featuresDict = {}
-            imgPath = patLvDiv_test / imgFile
-            featuresDict = extractFeatureDict(imgPath)
-            test_df = test_df.append(featuresDict, ignore_index=True)
-            print(f'{n}-Test')
-        cols = test_df.columns.tolist()
-        cols.remove('cellType(ALL=1, HEM=-1)')
-        cols = ['cellType(ALL=1, HEM=-1)'] + cols
-        test_df = test_df[cols]
-        test_df.to_csv(f'feature-dataframes/PatLvDiv_TEST-AllFeats_{test_df.shape[1]-1}-Features_{test_df.shape[0]}-images.csv')
+  #Create Train Dataframe
+  def createTrainDataframe():
+    train_df = pd.DataFrame()
+    np.random.shuffle(TRAIN_IMGS)
+    for n, imgFile in enumerate(TRAIN_IMGS):
+      imgPath = augm_patLvDiv_train / imgFile
+      featuresDict = extractFeatureDict(imgPath)
+      train_df = pd.concat([train_df, pd.DataFrame([featuresDict])], ignore_index=True)  # Corrigido aqui
+      print(f'{n}-Train')
     
-    p0 = multiprocessing.Process(name='train_AugmPatLvDiv', target=createTrainDataframe)
-    p1 = multiprocessing.Process(name='valid_AugmPatLvDiv',target=createValidDataframe)
-    p2 = multiprocessing.Process(name='test_PatLvDiv',target=createTestDataframe)
-    p0.start()
-    p1.start()
-    p2.start()
-    p0.join()
-    p1.join()
-    p2.join()
+    cols = train_df.columns.tolist()
+    cols.remove('cellType(ALL=1, HEM=-1)')
+    cols = ['cellType(ALL=1, HEM=-1)'] + cols
+    train_df = train_df[cols]
+    train_df.to_csv(f'feature-dataframes/AugmPatLvDiv_TRAIN-AllFeats_{train_df.shape[1]-1}-Features_{train_df.shape[0]}-images.csv')
+    #Process for Validation dataset
 
-p0 = multiprocessing.Process(name='AugmPatLvDiv', target=createAugmPatLvDivDataframe)
-p0.start()
-p0.join()
+  def createValidDataframe():
+    valid_df = pd.DataFrame()
+    np.random.shuffle(VALID_IMGS)
+    for n, imgFile in enumerate(VALID_IMGS):
+      featuresDict = {}
+      imgPath = augm_patLvDiv_valid / imgFile
+      featuresDict = extractFeatureDict(imgPath)
+      valid_df = pd.concat([valid_df, pd.DataFrame([featuresDict])], ignore_index=True)
+      print(f'{n}-Validation')
+
+    cols = valid_df.columns.tolist()
+    cols.remove('cellType(ALL=1, HEM=-1)')
+    cols = ['cellType(ALL=1, HEM=-1)'] + cols
+    valid_df = valid_df[cols]
+    valid_df.to_csv(f'feature-dataframes/AugmPatLvDiv_VALIDATION-AllFeats_{valid_df.shape[1]-1}-Features_{valid_df.shape[0]}-images.csv')
+
+  #Process for Test dataset
+  def createTestDataframe():
+    test_df = pd.DataFrame()
+    np.random.shuffle(TEST_IMGS)
+    for n, imgFile in enumerate(TEST_IMGS):
+      featuresDict = {}
+      imgPath = patLvDiv_test / imgFile
+      featuresDict = extractFeatureDict(imgPath)
+      test_df = pd.concat([test_df, pd.DataFrame([featuresDict])], ignore_index=True)
+      print(f'{n}-Test')
+
+    cols = test_df.columns.tolist()
+    cols.remove('cellType(ALL=1, HEM=-1)')
+    cols = ['cellType(ALL=1, HEM=-1)'] + cols
+    test_df = test_df[cols]
+    test_df.to_csv(f'feature-dataframes/PatLvDiv_TEST-AllFeats_{test_df.shape[1]-1}-Features_{test_df.shape[0]}-images.csv')
+    
+  p0 = multiprocessing.Process(name='train_AugmPatLvDiv', target=createTrainDataframe)
+  p1 = multiprocessing.Process(name='valid_AugmPatLvDiv',target=createValidDataframe)
+  p2 = multiprocessing.Process(name='test_PatLvDiv',target=createTestDataframe)
+  p0.start()
+  p1.start()
+  p2.start()
+  p0.join()
+  p1.join()
+  p2.join()
+
+createAugmPatLvDivDataframe()  #mudei aqui
+
 print(f"\nEnd Script!\n{'#'*50}")
 
 stop = timeit.default_timer()
